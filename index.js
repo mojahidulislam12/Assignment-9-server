@@ -24,7 +24,8 @@ async function run() {
     await client.connect();
     const db = client.db("CarRent");
     const carCollection = db.collection("car");
-
+    const bookingCollection = db.collection("booking");
+    //Car related API
     app.post("/car", async (req, res) => {
       const carData = req.body;
       console.log(carData);
@@ -41,6 +42,13 @@ async function run() {
       const { id } = req.params;
       const _id = new ObjectId(id);
       const result = await carCollection.findOne(_id);
+      res.send(result);
+    });
+
+    //Booking related API
+    app.post("/booking", async (req, res) => {
+      const bookingData = req.body;
+      const result = await bookingCollection.insertOne(bookingData);
       res.send(result);
     });
 
