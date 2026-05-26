@@ -26,6 +26,14 @@ async function run() {
     const carCollection = db.collection("car");
     const bookingCollection = db.collection("booking");
     //Car related API
+
+    app.get("/car/:userId", async (req, res) => {
+      const { userId } = req.params;
+
+      const result = await carCollection.find({ userId: userId }).toArray();
+
+      res.send(result);
+    });
     app.post("/car", async (req, res) => {
       const carData = req.body;
       console.log(carData);
