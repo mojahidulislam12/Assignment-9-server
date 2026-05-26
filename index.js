@@ -66,6 +66,15 @@ async function run() {
       });
       res.send(result);
     });
+    app.patch("/booking/:bookingId", async (req, res) => {
+      const { bookingId } = req.params;
+      const updateData = req.body;
+      const result = await bookingCollection.updateOne(
+        { _id: new ObjectId(bookingId) },
+        { $set: updateData },
+      );
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
