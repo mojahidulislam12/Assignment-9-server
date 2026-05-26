@@ -52,6 +52,21 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/booking/:userId", async (req, res) => {
+      const userId = req.params;
+
+      const result = await bookingCollection.find(userId).toArray();
+      res.send(result);
+    });
+
+    app.delete("/booking/:bookingId", async (req, res) => {
+      const { bookingId } = req.params;
+      const result = await bookingCollection.deleteOne({
+        _id: new ObjectId(bookingId),
+      });
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
