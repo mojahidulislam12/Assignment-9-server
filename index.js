@@ -27,13 +27,6 @@ async function run() {
     const bookingCollection = db.collection("booking");
     //Car related API
 
-    app.get("/car/:userId", async (req, res) => {
-      const { userId } = req.params;
-
-      const result = await carCollection.find({ userId: userId }).toArray();
-
-      res.send(result);
-    });
     app.post("/car", async (req, res) => {
       const carData = req.body;
       console.log(carData);
@@ -46,10 +39,23 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/car/:id", async (req, res) => {
-      const { id } = req.params;
-      const _id = new ObjectId(id);
-      const result = await carCollection.findOne(_id);
+    app.get(
+      "/car/:id",
+      (req, res, next) => {
+        const header = req.headers.authorization;
+        console.log(header);
+        next();
+      },
+      async (req, res) => {
+        const { id } = req.params;
+        const _id = new ObjectId(id);
+        const result = await carCollection.findOne(_id);
+        res.send(result);
+      },
+    );
+    app.get("/car/userId", async (req, res) => {
+      const userId = req.params;
+      const result = await carCollection.find(userId).toArray();
       res.send(result);
     });
 
