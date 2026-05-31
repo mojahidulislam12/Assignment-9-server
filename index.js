@@ -7,6 +7,7 @@ const cors = require("cors");
 dotenv.config();
 const PORT = process.env.PORT;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 app.use(cors());
 app.use(express.json());
 const uri = process.env.DB_URI;
@@ -18,6 +19,24 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+const JWKS = createRemoteJWKSet(new URL("http://localhost:3000/api/auth/jwks"));
+const verifyToken = async (req, res, next) => {
+  const headers = req?.headers.authorization;
+  if (!headers) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const token = headers.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const { payload } = await jwtVerify(token, JWKS);
+    console.log(payload);
+    next();
+  } catch (error) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+};
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -39,48 +58,50 @@ async function run() {
       res.send(result);
     });
 
-    app.get(
-      "/car/:id",
-      (req, res, next) => {
-        const header = req.headers.authorization;
-        console.log(header);
-        next();
-      },
-      async (req, res) => {
-        const { id } = req.params;
-        const _id = new ObjectId(id);
-        const result = await carCollection.findOne(_id);
-        res.send(result);
-      },
-    );
-    app.get("/car/userId", async (req, res) => {
+    app.get("/car/:id", async (req, res) => {
+      const { id } = req.params;
+      const _id = new ObjectId(id);
+      const result = await carCollection.findOne(_id);
+      res.send(result);
+    });
+    app.delete("/car/:userId", async (req, res) => {
       const userId = req.params;
-      const result = await carCollection.find(userId).toArray();
+      console.log(userId);
+
+      const result = await carCollection.deleteOne(userId);
       res.send(result);
     });
 
+    app.patch("/car/:userId", async (req, res) => {
+      const userId = req.params;
+      const updateData = req.body;
+      const result = await carCollection.updateOne(userId, {
+        $set: updateData,
+      });
+      res.send(result);
+    });
     //Booking related API
-    app.post("/booking", async (req, res) => {
+    app.post("/booking", verifyToken, async (req, res) => {
       const bookingData = req.body;
       const result = await bookingCollection.insertOne(bookingData);
       res.send(result);
     });
 
-    app.get("/booking/:userId", async (req, res) => {
+    app.get("/booking/:userId", verifyToken, async (req, res) => {
       const userId = req.params;
 
       const result = await bookingCollection.find(userId).toArray();
       res.send(result);
     });
 
-    app.delete("/booking/:bookingId", async (req, res) => {
+    app.delete("/booking/:bookingId", verifyToken, async (req, res) => {
       const { bookingId } = req.params;
       const result = await bookingCollection.deleteOne({
         _id: new ObjectId(bookingId),
       });
       res.send(result);
     });
-    app.patch("/booking/:bookingId", async (req, res) => {
+    app.patch("/booking/:bookingId", verifyToken, async (req, res) => {
       const { bookingId } = req.params;
       const updateData = req.body;
       const result = await bookingCollection.updateOne(
